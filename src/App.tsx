@@ -7,6 +7,8 @@ function App() {
       <Button type="primary">HUNG</Button>
       <div className='text-primary bg-amber-900'>HE alo HE</div>
       <Typography.Title className='text-primary bg-amber-300'>MY NAME</Typography.Title>
+      <Typography.Title className='text-primary bg-amber-300'>MY NAME</Typography.Title>
+
     </div>
   )
 }
