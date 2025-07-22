@@ -13,6 +13,7 @@ export default {
         background: '#F5F8FA',
         text: '#14171A',
         border: '#E1E8ED',
+        highlight: '#FFAD1F',
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
