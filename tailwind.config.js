@@ -12,6 +12,7 @@ export default {
         accent: '#657786',
         background: '#F5F8FA',
         text: '#14171A',
+        border: '#E1E8ED',
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
