@@ -1,4 +1,4 @@
-import { Button, Typography } from 'antd'
+import { Button } from 'antd'
 
 function App() {
 
