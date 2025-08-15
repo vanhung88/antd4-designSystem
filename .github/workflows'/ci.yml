@@ -1,0 +1,30 @@
+name: CI (Lint / Types / Test)
+
+on:
+  pull_request:
+    branches: [main, dev, sit]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci || npm install
+
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Type Check
+        run: npm run typecheck --if-present
+
+      - name: Unit Tests
+        run: npm test --if-present -- --ci --reporters=default --watch=false
