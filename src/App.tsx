@@ -5,7 +5,7 @@ function App() {
   return (
     <div className='flex justify-items-center w-full'>
       <Button type="primary">HUNG</Button>
-      HELLO a=mas
+      HELLO a=mas s
       <div className='text-primary bg-amber-300'>HE HE</div>
     </div>
   )
