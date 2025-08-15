@@ -12,36 +12,37 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        include:
+          - branch: dev
+            env: devnonprod
+          - branch: sit
+            env: sitnonprod
+          - branch: main
+            env: prod
+
     steps:
-      - name: Checkout
+      # 1. Lấy source code
+      - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2. Cài Node.js (Node 20 để tránh lỗi rimraf)
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'yarn'
 
+      # 3. Cài dependencies
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
+      # 4. Build React app
       - name: Build project
         run: yarn build
 
-      # Map branch -> Amplify env and export to $GITHUB_ENV
-      - name: Select Amplify environment
-        run: |
-          case "${GITHUB_REF_NAME}" in
-            dev)  echo "AMPLIFY_ENV=devnonprod"  >> $GITHUB_ENV
-                  echo "AMPLIFY_URL=https://d3th2co540vdv3.amplifyapp.com" >> $GITHUB_ENV ;;
-            sit)  echo "AMPLIFY_ENV=sitnonprod"  >> $GITHUB_ENV
-                  echo "AMPLIFY_URL=https://d3th2co540vdv3.amplifyapp.com" >> $GITHUB_ENV ;;
-            main) echo "AMPLIFY_ENV=prod"        >> $GITHUB_ENV
-                  echo "AMPLIFY_URL=https://d3th2co540vdv3.amplifyapp.com" >> $GITHUB_ENV ;;
-            *)    echo "Unsupported branch: ${GITHUB_REF_NAME}"; exit 1 ;;
-          esac
-          echo "Using Amplify env: ${AMPLIFY_ENV}"
-
+      # 5. Cấu hình AWS Credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -49,11 +50,14 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-northeast-1
 
+      # 6. Cài Amplify CLI
       - name: Install Amplify CLI
-        run: npm i -g @aws-amplify/cli
+        run: npm install -g @aws-amplify/cli
 
-      - name: Checkout Amplify environment
-        run: amplify env checkout "${{ env.AMPLIFY_ENV }}" --yes
+      # 7. Pull backend config từ Amplify Console (thay cho env checkout)
+      - name: Pull Amplify backend
+        run: amplify pull --appId d3th2co540vdv3 --envName "${{ matrix.env }}" --yes --force
 
+      # 8. Publish lên Amplify Hosting
       - name: Publish to Amplify Hosting
         run: amplify publish --invalidateCloudFront --yes
