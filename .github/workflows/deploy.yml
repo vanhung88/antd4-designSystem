@@ -19,7 +19,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
           cache: 'yarn'
 
       - name: Install dependencies
@@ -32,9 +32,12 @@ jobs:
       - name: Select Amplify environment
         run: |
           case "${GITHUB_REF_NAME}" in
-            dev)  echo "AMPLIFY_ENV=devnonprod"  >> $GITHUB_ENV ;;
-            sit)  echo "AMPLIFY_ENV=sitnonprod"  >> $GITHUB_ENV ;;
-            main) echo "AMPLIFY_ENV=prod"        >> $GITHUB_ENV ;;
+            dev)  echo "AMPLIFY_ENV=devnonprod"  >> $GITHUB_ENV
+                  echo "AMPLIFY_URL=https://d3th2co540vdv3.amplifyapp.com" >> $GITHUB_ENV ;;
+            sit)  echo "AMPLIFY_ENV=sitnonprod"  >> $GITHUB_ENV
+                  echo "AMPLIFY_URL=https://d3th2co540vdv3.amplifyapp.com" >> $GITHUB_ENV ;;
+            main) echo "AMPLIFY_ENV=prod"        >> $GITHUB_ENV
+                  echo "AMPLIFY_URL=https://d3th2co540vdv3.amplifyapp.com" >> $GITHUB_ENV ;;
             *)    echo "Unsupported branch: ${GITHUB_REF_NAME}"; exit 1 ;;
           esac
           echo "Using Amplify env: ${AMPLIFY_ENV}"
@@ -54,7 +57,3 @@ jobs:
 
       - name: Publish to Amplify Hosting
         run: amplify publish --invalidateCloudFront --yes
-
-      # (tùy chọn) log URL cố định nếu bạn muốn
-      # - name: Show site URL
-      #   run: echo "✅ Visit: https://d3th2co540vdv3.amplifyapp.com"
