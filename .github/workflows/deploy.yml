@@ -2,7 +2,7 @@ name: Deploy to Amplify Hosting
 
 on:
   push:
-    branches: [develop, sit, release]
+    branches: [dev, sit, main]
 
 concurrency:
   group: deploy-${{ github.ref }}
