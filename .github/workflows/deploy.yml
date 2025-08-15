@@ -2,7 +2,7 @@ name: Deploy to Amplify Hosting
 
 on:
   push:
-    branches: [develop, uat, sit, release]
+    branches: [develop, sit, release]
 
 concurrency:
   group: deploy-${{ github.ref }}
@@ -17,48 +17,49 @@ jobs:
         include:
           - branch: dev
             env: devnonprod
-          - branch: uat
-            env: uatnonprod
-          - branch: main
+          - branch: sit
+            env: sitnonprod
+          - branch: release
             env: prod
 
-    # Chỉ chạy khi branch khớp item matrix
     if: ${{ github.ref_name == matrix.branch }}
 
     steps:
+      # 1. Lấy code
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      # 2. Cài Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: 'npm'
+          cache: 'yarn'
 
-      - name: Install
-        run: npm ci || npm install
+      # 3. Cài dependencies
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
 
-      - name: Build
-        run: npm run build
+      # 4. Build React app
+      - name: Build project
+        run: yarn build
 
-      # Cấu hình AWS bằng long-lived keys (đơn giản nhất)
-      - name: Configure AWS Credentials
+      # 5. Cấu hình AWS Credentials
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ap-northeast-1
 
+      # 6. Cài Amplify CLI
       - name: Install Amplify CLI
         run: npm i -g @aws-amplify/cli
 
-      - name: Amplify version
-        run: amplify --version
-
-      # Checkout đúng env (đã tạo sẵn & commit metadata)
-      - name: Checkout Amplify env
+      # 7. Checkout Amplify Environment đúng theo branch
+      - name: Checkout Amplify environment
         run: amplify env checkout ${{ matrix.env }} --yes
 
-      # Publish + Invalidate CloudFront cache
+      # 8. Publish lên Amplify Hosting
       - name: Publish to Amplify Hosting
         run: amplify publish --invalidateCloudFront --yes
