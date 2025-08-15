@@ -12,41 +12,33 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    strategy:
-      max-parallel: 1
-      matrix:
-        include:
-          - branch: dev
-            amplify_env: devnonprod
-          - branch: sit
-            amplify_env: sitnonprod
-          - branch: main
-            amplify_env: prod
-
-    # Chỉ chạy job khi branch khớp với matrix.branch
-    if: ${{ github.ref_name == matrix.branch }}
-
     steps:
-      # 1. Lấy code
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 2. Cài Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: 'yarn'
 
-      # 3. Cài dependencies
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
-      # 4. Build React app
       - name: Build project
         run: yarn build
 
-      # 5. Cấu hình AWS Credentials
+      # Map branch -> Amplify env and export to $GITHUB_ENV
+      - name: Select Amplify environment
+        run: |
+          case "${GITHUB_REF_NAME}" in
+            dev)  echo "AMPLIFY_ENV=devnonprod"  >> $GITHUB_ENV ;;
+            sit)  echo "AMPLIFY_ENV=sitnonprod"  >> $GITHUB_ENV ;;
+            main) echo "AMPLIFY_ENV=prod"        >> $GITHUB_ENV ;;
+            *)    echo "Unsupported branch: ${GITHUB_REF_NAME}"; exit 1 ;;
+          esac
+          echo "Using Amplify env: ${AMPLIFY_ENV}"
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -54,14 +46,15 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-northeast-1
 
-      # 6. Cài Amplify CLI
       - name: Install Amplify CLI
         run: npm i -g @aws-amplify/cli
 
-      # 7. Checkout Amplify Environment
       - name: Checkout Amplify environment
-        run: amplify env checkout ${{ matrix.amplify_env }} --yes
+        run: amplify env checkout "${{ env.AMPLIFY_ENV }}" --yes
 
-      # 8. Publish lên Amplify Hosting
       - name: Publish to Amplify Hosting
         run: amplify publish --invalidateCloudFront --yes
+
+      # (tùy chọn) log URL cố định nếu bạn muốn
+      # - name: Show site URL
+      #   run: echo "✅ Visit: https://d3th2co540vdv3.amplifyapp.com"
