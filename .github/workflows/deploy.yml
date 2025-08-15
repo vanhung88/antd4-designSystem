@@ -13,30 +13,26 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      max-parallel: 1
       matrix:
-        env:
-          - name: dev
+        include:
+          - branch: dev
             amplify_env: devnonprod
-          - name: sit
+          - branch: sit
             amplify_env: sitnonprod
-          - name: main
+          - branch: main
             amplify_env: prod
-        # Filter chỉ giữ lại phần tử match branch hiện tại
-        max-parallel: 1
+
+    # Chỉ chạy job khi branch khớp với matrix.branch
+    if: ${{ github.ref_name == matrix.branch }}
 
     steps:
-      - name: Check branch and set env
-        if: ${{ github.ref_name == matrix.env.name }}
-        run: echo "Matched branch ${{ matrix.env.name }} → Amplify env ${{ matrix.env.amplify_env }}"
-
       # 1. Lấy code
       - name: Checkout
-        if: ${{ github.ref_name == matrix.env.name }}
         uses: actions/checkout@v4
 
       # 2. Cài Node.js
       - name: Setup Node.js
-        if: ${{ github.ref_name == matrix.env.name }}
         uses: actions/setup-node@v4
         with:
           node-version: 18
@@ -44,17 +40,14 @@ jobs:
 
       # 3. Cài dependencies
       - name: Install dependencies
-        if: ${{ github.ref_name == matrix.env.name }}
         run: yarn install --frozen-lockfile
 
       # 4. Build React app
       - name: Build project
-        if: ${{ github.ref_name == matrix.env.name }}
         run: yarn build
 
       # 5. Cấu hình AWS Credentials
       - name: Configure AWS credentials
-        if: ${{ github.ref_name == matrix.env.name }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -63,15 +56,12 @@ jobs:
 
       # 6. Cài Amplify CLI
       - name: Install Amplify CLI
-        if: ${{ github.ref_name == matrix.env.name }}
         run: npm i -g @aws-amplify/cli
 
       # 7. Checkout Amplify Environment
       - name: Checkout Amplify environment
-        if: ${{ github.ref_name == matrix.env.name }}
-        run: amplify env checkout ${{ matrix.env.amplify_env }} --yes
+        run: amplify env checkout ${{ matrix.amplify_env }} --yes
 
       # 8. Publish lên Amplify Hosting
       - name: Publish to Amplify Hosting
-        if: ${{ github.ref_name == matrix.env.name }}
         run: amplify publish --invalidateCloudFront --yes
