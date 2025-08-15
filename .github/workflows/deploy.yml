@@ -15,13 +15,11 @@ jobs:
     strategy:
       matrix:
         include:
-          - branch: develop
+          - branch: dev
             env: devnonprod
           - branch: uat
             env: uatnonprod
-          - branch: sit
-            env: sitnonprod
-          - branch: release
+          - branch: main
             env: prod
 
     # Chỉ chạy khi branch khớp item matrix
