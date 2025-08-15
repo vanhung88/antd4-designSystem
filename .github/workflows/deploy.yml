@@ -19,7 +19,7 @@ jobs:
             env: devnonprod
           - branch: sit
             env: sitnonprod
-          - branch: release
+          - branch: main
             env: prod
 
     if: ${{ github.ref_name == matrix.branch }}
