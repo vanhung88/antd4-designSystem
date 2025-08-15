@@ -57,6 +57,3 @@ jobs:
 
       - name: Publish to Amplify Hosting
         run: amplify publish --invalidateCloudFront --yes
-
-      - name: Show deployed site URL
-        run: echo "✅ Site deployed! Visit: ${{ env.AMPLIFY_URL }}"
