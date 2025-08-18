@@ -1,3 +1,68 @@
+# name: Deploy to Amplify Hosting
+
+# on:
+#   push:
+#     branches: [dev, sit, main]
+
+# concurrency:
+#   group: deploy-${{ github.ref }}
+#   cancel-in-progress: true
+
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+
+#     strategy:
+#       matrix:
+#         include:
+#           - branch: dev
+#             env: devnonprod
+#           - branch: sit
+#             env: sitnonprod
+#           - branch: main
+#             env: prod
+
+#     steps:
+#       # 1. Lấy source code
+#       - name: Checkout code
+#         uses: actions/checkout@v4
+
+#       # 2. Cài Node.js (Node 20 để tránh lỗi rimraf)
+#       - name: Setup Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: 20
+#           cache: 'yarn'
+
+#       # 3. Cài dependencies
+#       - name: Install dependencies
+#         run: yarn install --frozen-lockfile
+
+#       # 4. Build React app
+#       - name: Build project
+#         run: yarn build
+
+#       # 5. Cấu hình AWS Credentials
+#       - name: Configure AWS credentials
+#         uses: aws-actions/configure-aws-credentials@v4
+#         with:
+#           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#           aws-region: ap-northeast-1
+
+#       # 6. Cài Amplify CLI
+#       - name: Install Amplify CLI
+#         run: npm install -g @aws-amplify/cli
+
+#       # 7. Pull backend config từ Amplify Console (thay cho env checkout)
+#       - name: Pull Amplify backend
+#         run: amplify pull --appId d3th2co540vdv3 --envName "${{ matrix.env }}" --yes --force
+
+#       # 8. Publish lên Amplify Hosting
+#       - name: Publish to Amplify Hosting
+#         run: amplify publish --invalidateCloudFront --yes
+
+
 name: Deploy to Amplify Hosting
 
 on:
@@ -12,37 +77,36 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        include:
-          - branch: dev
-            env: devnonprod
-          - branch: sit
-            env: sitnonprod
-          - branch: main
-            env: prod
-
     steps:
-      # 1. Lấy source code
+      # 1) Code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Cài Node.js (Node 20 để tránh lỗi rimraf)
+      # 2) Node 20 (tránh lỗi rimraf)
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'yarn'
 
-      # 3. Cài dependencies
+      # 3) Install & build FE
       - name: Install dependencies
         run: yarn install --frozen-lockfile
-
-      # 4. Build React app
       - name: Build project
         run: yarn build
 
-      # 5. Cấu hình AWS Credentials
+      # 4) Map nhánh -> Amplify env (chỉ 1 env tuỳ nhánh hiện tại)
+      - name: Select Amplify environment
+        run: |
+          case "${GITHUB_REF_NAME}" in
+            dev)  echo "AMPLIFY_ENV=devnonprod"  >> $GITHUB_ENV ;;
+            sit)  echo "AMPLIFY_ENV=sitnonprod"  >> $GITHUB_ENV ;;
+            main) echo "AMPLIFY_ENV=prod"        >> $GITHUB_ENV ;;
+            *)    echo "Unsupported branch: ${GITHUB_REF_NAME}"; exit 1 ;;
+          esac
+          echo "Using Amplify env: ${AMPLIFY_ENV}"
+
+      # 5) AWS creds
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -50,14 +114,14 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-northeast-1
 
-      # 6. Cài Amplify CLI
+      # 6) Amplify CLI
       - name: Install Amplify CLI
-        run: npm install -g @aws-amplify/cli
+        run: npm i -g @aws-amplify/cli
 
-      # 7. Pull backend config từ Amplify Console (thay cho env checkout)
+      # 7) Pull cấu hình backend/hosting của đúng env
       - name: Pull Amplify backend
-        run: amplify pull --appId d3th2co540vdv3 --envName "${{ matrix.env }}" --yes --force
+        run: amplify pull --appId d3th2co540vdv3 --envName "${{ env.AMPLIFY_ENV }}" --yes --force
 
-      # 8. Publish lên Amplify Hosting
+      # 8) Publish + invalidate CDN
       - name: Publish to Amplify Hosting
         run: amplify publish --invalidateCloudFront --yes
