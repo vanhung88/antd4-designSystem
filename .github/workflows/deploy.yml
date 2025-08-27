@@ -14,13 +14,7 @@
 
 #     strategy:
 #       matrix:
-#         include:
-#           - branch: dev
-#             env: devnonprod
-#           - branch: sit
-#             env: sitnonprod
-#           - branch: main
-#             env: prod
+s
 
 #     steps:
 #       # 1. Lấy source code
